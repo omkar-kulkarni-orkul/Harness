@@ -1,0 +1,53 @@
+pipeline:
+  stages:
+    - stage:
+        name: Example Stage
+        type: CI
+        spec:
+          execution:
+            steps:
+              - step:
+                  name: Parse POST Response
+                  identifier: parse_post_response
+                  type: ShellScript
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |
+                          # Perform a POST request and capture the response
+                          response=$(curl -s -X POST "https://example.com/api" -d '{"key":"value"}')
+                          
+                          # Parse the response to extract the "id" value
+                          parsed_value=$(echo $response | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
+                          
+                          # Export the parsed value to use it in the next step
+                          echo "Parsed ID: $parsed_value"
+                          echo "export PARSED_VALUE=$parsed_value" >> envVars.env
+                    environmentVariables:
+                      PARSED_VALUE: "<+output.parse_post_response.outputVariables.PARSED_VALUE>"
+                    outputVariables:
+                      - name: PARSED_VALUE
+                        type: String
+                        value: <+step.outputVariables.PARSED_VALUE>
+
+              - step:
+                  name: Use Parsed Value in GET Request
+                  identifier: use_parsed_value
+                  type: ShellScript
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |
+                          # Load the parsed value from the previous step
+                          source envVars.env
+                          
+                          # Use the parsed value in a GET request
+                          curl -s -X GET "https://example.com/resource/$PARSED_VALUE"
+                    environmentVariables:
+                      PARSED_VALUE: "<+steps.parse_post_response.output.outputVariables.PARSED_VALUE>"
