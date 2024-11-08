@@ -1,0 +1,30 @@
+- step:
+    name: Parse POST Response
+    identifier: parse_post_response
+    type: ShellScript
+    spec:
+      shell: Bash
+      onDelegate: true
+      source:
+        type: Inline
+        spec:
+          script: |
+            parsed_value="12345"
+            echo "PARSED_VALUE=$parsed_value"
+      outputVariables:
+        - name: PARSED_VALUE
+          type: String
+          value: <+step.outputVariables.PARSED_VALUE>  # Direct output variable
+
+- step:
+    name: Use Parsed Value in GET Request
+    identifier: use_parsed_value
+    type: ShellScript
+    spec:
+      shell: Bash
+      onDelegate: true
+      source:
+        type: Inline
+        spec:
+          script: |
+            echo "Using Parsed Value: <+steps.parse_post_response.output.outputVariables.PARSED_VALUE>"
